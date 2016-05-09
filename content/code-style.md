@@ -1,6 +1,6 @@
 ---
-title: Code style
-order: 2
+title: Code Style
+order: 1
 description: Suggested style guidelines for your code.
 discourseTopicId: 20189
 ---
@@ -84,11 +84,13 @@ Below, you can find directions for setting up automatic linting at many differen
 
 <h3 id="eslint-installing">Installing and running ESLint</h3>
 
-To setup ESLint in your application, you can install the following npm packages:
+To setup ESLint in your application, you can install the following [npm](https://docs.npmjs.com/getting-started/what-is-npm) packages:
 
 ```
-npm install --save-dev eslint eslint-plugin-react eslint-plugin-meteor eslint-config-airbnb
+meteor npm install --save-dev eslint eslint-plugin-react eslint-plugin-meteor eslint-config-airbnb
 ```
+
+> Meteor comes with npm bundled so that you can type meteor npm without worrying about installing it yourself. If you like, you can also use a globally installed npm command.
 
 You can also add a `eslintConfig` section to your `package.json` to specify that you'd like to use the Airbnb config, and to enable [ESLint-plugin-Meteor](https://github.com/dferber90/eslint-plugin-meteor). You can also setup any extra rules you want to change, as well as adding a lint npm command:
 
@@ -105,7 +107,7 @@ You can also add a `eslintConfig` section to your `package.json` to specify that
     ],
     "extends": [
       "airbnb/base",
-      "plugin:meteor/guide"
+      "plugin:meteor/recommended"
     ],
     "rules": {}
   }
@@ -117,8 +119,41 @@ Use `"airbnb/base"` for a normal ecmascript-based config and `"airbnb"` in a Rea
 To run the linter, you can now simply type:
 
 ```bash
-npm run lint
+meteor npm run lint
 ```
+
+If you get errors from the default `meteor create myapp` such as:
+
+```bash
+/opt/www/sites/me/myapp/client/main.js
+   1:26  error  Unable to resolve path to module 'meteor/templating'    import/no-unresolved
+   2:29  error  Unable to resolve path to module 'meteor/reactive-var'  import/no-unresolved
+  18:25  error  Invalid parameter name, use "templateInstance" instead  meteor/eventmap-params
+
+/opt/www/sites/me/myapp/server/main.js
+  1:24  error  Unable to resolve path to module 'meteor/meteor'  import/no-unresolved
+```
+
+then you can quiet them by adding [`eslint-import-resolver-meteor`](https://github.com/clayne11/eslint-import-resolver-meteor) plugin
+
+`meteor npm install --save-dev eslint eslint-plugin-import eslint-import-resolver-meteor`
+
+Following that, register the resolver in `settings` in `eslintConfig`.  For instance,
+
+```
+{
+  ...
+  "eslintConfig": {
+   ...
+    "rules": {},
+    "settings": {
+      "import/resolver": "meteor"
+    }
+  }
+}
+```
+
+The `"rules": {}` is there to highlight that there were no customized ignore rules.
 
 For more details, read the [Getting Started](http://eslint.org/docs/user-guide/getting-started) directions from the ESLint website.
 
@@ -141,23 +176,13 @@ A side note for Emmet users: You can use *\<ctrl-e\>* to expand HTML tags in .js
 
 <h4 id="eslint-atom">Atom</h4>
 
-Install the following three Atom packages. Here's how to install them from the terminal, but you can also select them from within Atom:
+Using ESLint with Atom is simple. Just install these three packages:
 
 ```bash
 apm install language-babel
 apm install linter
 apm install linter-eslint
 ```
-
-Go to *Settings -> Packages.* Under "linter-eslint", click the *Settings* button. To allow atom to see ESLint, you need to set "Global Node Path" to your Node path. As indicated in Atom, you can find this out with the following command in the terminal:
-
-```
-meteor npm config get prefix
-```
-
-This will return something like `/usr/local`. Add this to the "Global Node Path", and check "Use Global Eslint":
-
-![Set your "Global Node Path" and check "Use Global Eslint"](images/atom-configuration.png)
 
 Then **restart** (or **reload** by pressing Ctrl+Alt+R / Cmd+Opt+R) Atom to activate linting.
 
@@ -274,6 +299,6 @@ show.js
 show.less
 ```
 
-The whole directory or path should indicate that these templates are related to the `Lists` module, so it's not necessary to reproduce that information in the file name. Read more about directory structure [above](#javascript-structure).
+The whole directory or path should indicate that these templates are related to the `Lists` module, so it's not necessary to reproduce that information in the file name. Read more about directory structure [above](structure.html#javascript-structure).
 
 If you are writing your UI in React, you don't need to use the underscore-split names because you can import and export your components using the JavaScript module system.

@@ -18,14 +18,14 @@ Meteor is a full-stack JavaScript platform for developing modern web and mobile 
 
 <h3 id="quickstart">Quick start</h3>
 
-Meteor supports [OS X, Windows, and Linux](https://github.com/meteor/meteor/wiki/Supported-Platforms).
+Meteor supports [OS X, Windows, and Linux](https://www.meteor.com/install).
 
 On Windows?  [Download the official Meteor installer here](https://install.meteor.com/windows).
 
 On OS X or Linux?  Install the latest official Meteor release from your terminal:
 
 ```bash
-$ curl https://install.meteor.com/ | sh
+curl https://install.meteor.com/ | sh
 ```
 
 The Windows installer supports Windows 7, Windows 8.1, Windows Server
@@ -42,9 +42,12 @@ Run it locally:
 
 ```bash
 cd myapp
+meteor npm install
 meteor
 # Meteor server running on: http://localhost:3000/
 ```
+
+> Meteor comes with npm bundled so that you can type `meteor npm` without worrying about installing it yourself. If you like, you can also use a globally installed npm to manage your packages.
 
 <h2 id="learning-more">Meteor resources</h2>
 

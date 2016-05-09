@@ -1,6 +1,6 @@
 ---
 title: Publications and Data Loading
-order: 4
+order: 11
 description: How and where to load data in your Meteor app using publications and subscriptions.
 discourseTopicId: 19661
 ---
@@ -26,7 +26,7 @@ Meteor is built from the ground up on the Distributed Data Protocol (DDP) to all
 
 In Meteor a **publication** is a named API on the server that constructs a set of data to send to a client. A client initiates a **subscription** which connects to a publication, and receives that data. That data consists of a first batch sent when the subscription is initialized and then incremental updates as the published data changes.
 
-So a subscription can be thought of as a set of data that changes over time. Typically, the result of this is that a subscription "bridges" a [server-side MongoDB collection](/collections.md#server-collections), and the [client side Minimongo cache](collections.html#client-collections) of that collection. You can think of a subscription as a pipe that connects a subset of the "real" collection with the client's version, and constantly keeps it up to date with the latest information on the server.
+So a subscription can be thought of as a set of data that changes over time. Typically, the result of this is that a subscription "bridges" a [server-side MongoDB collection](/collections.html#server-collections), and the [client side Minimongo cache](collections.html#client-collections) of that collection. You can think of a subscription as a pipe that connects a subset of the "real" collection with the client's version, and constantly keeps it up to date with the latest information on the server.
 
 <h2 id="publications">Defining a publication</h2>
 
@@ -42,7 +42,7 @@ Meteor.publish('lists.public', function() {
 });
 ```
 
-There are a few things to understand about this code block. First, we've named the publication with the unique string `Lists.public`, and that will be how we access it from the client. Second, we are simply returning a Mongo *cursor* from the publication function. Note that the cursor is filtered to only return certain fields from the collection, as detailed in the [Security article](security.html#fields).
+There are a few things to understand about this code block. First, we've named the publication with the unique string `lists.public`, and that will be how we access it from the client. Second, we are simply returning a Mongo *cursor* from the publication function. Note that the cursor is filtered to only return certain fields from the collection, as detailed in the [Security article](security.html#fields).
 
 What that means is that the publication will simply ensure the set of data matching that query is available to any client that subscribes to it. In this case, all lists that do not have a `userId` setting. So the collection named `Lists` on the client will have all of the public lists that are available in the server collection named `Lists` while that subscription is open. In this particular example in the Todos application, the subscription is initialized when the app starts and never stopped, but a later section will talk about [subscription life cycle](data-loading.html#patterns).
 
@@ -148,11 +148,11 @@ If you're publishing a subset of your data, it might be tempting to simply query
 
 But if you do this, then you open yourself up to problems if another subscription pushes data into the same collection, since the data returned by `Lists.find()` might not be what you expected anymore. In an actively developed application, it's often hard to anticipate what may change in the future and this can be a source of hard to understand bugs.
 
-Also, when changing between subscriptions, there is a brief period where both subscriptions are loaded (see [Publication behavior when changing arguments](#publication-behavior-with-arguments) below), so when doing thing like pagination, it's exceedingly likely that this will be the case.
+Also, when changing between subscriptions, there is a brief period where both subscriptions are loaded (see [Publication behavior when changing arguments](#publication-behavior-with-arguments) below), so when doing things like pagination, it's exceedingly likely that this will be the case.
 
 <h4 id="fetch-near-subscribe">Fetch the data nearby where you subscribed to it</h4>
 
-We do this for the same reason we subscribe in the component in the first place---to avoid action at a distance and to make it easier to understand where data comes from. A common pattern is to fetch the data in a parent template, and then pass it into a "pure" child component, as we'll see in in the [UI Article](ui-ux.html#components).
+We do this for the same reason we subscribe in the component in the first place---to avoid action at a distance and to make it easier to understand where data comes from. A common pattern is to fetch the data in a parent template, and then pass it into a "pure" child component, as we'll see it in the [UI Article](ui-ux.html#components).
 
 Note that there are some exceptions to this second rule. A common one is `Meteor.user()`---although this is strictly speaking subscribed to (automatically usually), it's typically over-complicated to pass it through the component hierarchy as an argument to each component. However keep in mind it's best not to use it in too many places as it makes components harder to test.
 
@@ -531,7 +531,7 @@ Then when a client calls `Meteor.subscribe('Posts.all')` the following things ha
 
 3. The publication handler identifies that the return value is a cursor. This enables a convenient mode for publishing cursors.
 
-4. The server sets up a query observer on that cursor, unless a such an observer already exists on the server (for any user), in which case that observer is re-used.
+4. The server sets up a query observer on that cursor, unless such an observer already exists on the server (for any user), in which case that observer is re-used.
 
 5. The observer fetches the current set of documents matching the cursor, and passes them back to the subscription (via the `this.added()` callback).
 

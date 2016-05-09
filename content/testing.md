@@ -1,6 +1,6 @@
 ---
 title: "Testing"
-order: 7
+order: 14
 description: How to test your Meteor application
 discourseTopicId: 20191
 ---
@@ -25,7 +25,7 @@ Entire books have been written on the subject of testing, so we will simply touc
 
 <h3 id="challenges-with-meteor">Challenges of testing in Meteor</h3>
 
-In most ways, testing a Meteor app is no different from testing any other full stack JavaScript application. However, compared to more traditional backend or frontend focused frameworks, two factors can make testing a little more challenging:
+In most ways, testing a Meteor app is no different from testing any other full stack JavaScript application. However, compared to more traditional backend or front-end focused frameworks, two factors can make testing a little more challenging:
 
 - **Client/server data**: Meteor's data system makes it simple to bridge the client-server gap and often allows you to build your application without thinking about how data moves around. It becomes critical to test that your code does actually work correctly across that gap. In traditional frameworks where you spend a lot of time thinking about interfaces between client and server you can often get away with testing both sides of the interface in isolation, but Meteor's [full app test mode](#test-modes) makes it easy to write [integration tests](#full-app-integration-test) that cover the full stack. Another challenge here is creating test data in the client context; we'll discuss ways to do this in the [section on generating test data](#generating-test-data) below.
 
@@ -40,7 +40,9 @@ This loads your application in a special "test mode". What this does is:
 1. *Doesn't* eagerly load *any* of our application code as Meteor normally would.
 2. *Does* eagerly load any file in our application (including in `imports/` folders) that look like `*.test[s].*`, or `*.spec[s].*`
 3. Sets the `Meteor.isTest` flag to be true.
-4. Starts up the test driver package ([see below](#driver-package)).
+4. Starts up the test driver package ([see below](#driver-packages)).
+
+> The [Meteor build tool](build-tool.html#what-it-does) and the `meteor test` command ignore any files located in any `tests/` directory. This allows you to put tests in this directory that you can run using a test runner outside of Meteor's built-in test tools and still not have those files loaded in your application. See Meteor's [default file load order](structure.html#load-order) rules.
 
 What this means is that you can write tests in files with a certain filename pattern and know they'll not be included in normal builds of your app. When your app runs in test mode, those files will be loaded (and nothing else will), and they can import the modules you want to test. As we'll see this is ideal for [unit tests](#unit-testing) and [simple integration tests](#simple-integration-test).
 
@@ -53,7 +55,7 @@ This is similar to test mode, with key differences:
 
 This means that the entirety of your application (including for instance the web server and client side router) is loaded and will run as normal. This enables you to write much more [complex integration tests](#full-app-integration-test) and also load additional files for [acceptance tests](#acceptance-testing).
 
-Note that there is another test command in the Meteor tool; `meteor test-packages` is a way of testing Atmosphere packages, which we'll discuss in more detail in an upcoming article about writing packages.
+Note that there is another test command in the Meteor tool; `meteor test-packages` is a way of testing Atmosphere packages, which is discussed in the [Writing Packages article](writing-packages.html#testing).
 
 <h3 id="driver-packages">Driver packages</h3>
 
@@ -69,7 +71,7 @@ There are two main kinds of test driver packages:
 
 <h3 id="mocha">Recommended: Mocha</h3>
 
-In this article, we'll use the popular [Mocha](https://mochajs.org) test runner alongside the [Chai](http://chaijs.com) assertion library to test our application. In order to write tests in Mocha, we can add the [`practicalmeteor:mocha`](https://atmospherejs.com/avital/mocha) package to our app.
+In this article, we'll use the popular [Mocha](https://mochajs.org) test runner alongside the [Chai](http://chaijs.com) assertion library to test our application. In order to write tests in Mocha, we can add the [`practicalmeteor:mocha`](https://atmospherejs.com/practicalmeteor/mocha) package to our app.
 
 ```bash
 meteor add practicalmeteor:mocha
@@ -80,13 +82,15 @@ This package also doesn't do anything in development or production mode (in fact
 Test files themselves (for example a file named `todos-item.test.js` or `routing.app-specs.coffee`) can register themselves to be run by the test driver in the usual way for that testing library. For Mocha, that's by using `describe` and `it`:
 
 ```js
-describe('my module', () => {
-  it('does something that should be tested', () => {
+describe('my module', function () {
+  it('does something that should be tested', function () {
     // This code will be executed by the test driver when the app is started
     // in the correct mode
   })
 })
 ```
+
+Note that arrow function use with Mocha [is discouraged](http://mochajs.org/#arrow-functions).
 
 <h2 id="test-data">Test data</h2>
 
@@ -99,8 +103,8 @@ To ensure the database is clean, the [`xolvio:cleaner`](https://atmospherejs.com
 ```js
 import { resetDatabase } from 'meteor/xolvio:cleaner';
 
-describe('my module', () => {
-  beforeEach(() => {
+describe('my module', function () {
+  beforeEach(function () {
     resetDatabase();
   });
 });
@@ -117,8 +121,8 @@ Meteor.methods({
   'test.resetDatabase': () => resetDatabase();
 });
 
-describe('my module', done => {
-  beforeEach(done => {
+describe('my module', function (done) {
+  beforeEach(function (done) {
     // We need to wait until the method call is done before moving on, so we
     // use Mocha's async mechanism (calling a done callback)
     Meteor.call('test.resetDatabase', done);
@@ -126,13 +130,13 @@ describe('my module', done => {
 });
 ```
 
-As we've placed the code above in a test file, it *will not* load in normal development or production mode (which would a incredibly bad thing!). If you create a Atmosphere package with a similar feature, you should mark it as `testOnly` and it will similarly only load in test mode.
+As we've placed the code above in a test file, it *will not* load in normal development or production mode (which would be an incredibly bad thing!). If you create a Atmosphere package with a similar feature, you should mark it as `testOnly` and it will similarly only load in test mode.
 
 <h3 id="generating-test-data">Generating test data</h3>
 
 Often it's sensible to create a set of data to run your test against. You can use standard `insert()` calls against your collections to do this, but often it's easier to create *factories* which help encode random test data. A great package to use to do this is [`dburles:factory`](https://atmospherejs.com/dburles/factory).
 
-In the Todos example app, we define a factory to describe how to create a test todo item, using the [`faker`](https://www.npmjs.com/package/Faker) npm package:
+In the Todos example app, we define a factory to describe how to create a test todo item, using the [`faker`](https://www.npmjs.com/package/faker) npm package:
 
 ```js
 import faker from 'faker';
@@ -157,10 +161,10 @@ const todoInList = Factory.create('todo', { listId: list._id });
 
 <h3 id="mocking-the-database">Mocking the database</h3>
 
-As `Factory.create` directly inserts documents into the collection that's passed into the `Factory.define` function, it can be a problem to use it on the client. However there's a neat isolation trick that you can do to replace the server-backed `Todos` [client collection](collections.html#client-collections) with a mocked out [local collection](#collections.html#local-collections), that's encoded in the `stub-collections` package (currently a local package in the Todos example application).
+As `Factory.create` directly inserts documents into the collection that's passed into the `Factory.define` function, it can be a problem to use it on the client. However there's a neat isolation trick that you can do to replace the server-backed `Todos` [client collection](collections.html#client-collections) with a mocked out [local collection](#collections.html#local-collections), that's encoded in the [`hwillson:stub-collections`](https://atmospherejs.com/hwillson/stub-collections) package.
 
 ```js
-import { StubCollections } from 'meteor/stub-collections';
+import StubCollections from 'meteor/hwillson:stub-collections';
 import { Todos } from 'path/to/todos.js';
 
 StubCollections.stub(Todos);
@@ -179,13 +183,15 @@ In a Mocha test, it makes sense to use `stub-collections` in a `beforeEach`/`aft
 
 Unit testing is the process of isolating a section of code and then testing that the internals of that section work as you expect. As [we've split our code base up into ES2015 modules](structure.html) it's natural to test those modules one at a time.
 
-By isolating a module and simply test its internal functionality, we can write tests that are *fast* and *accurate*---they can quickly tell you where a problem in your application lies. Note however that incomplete unit tests can often hide bugs because of the way they stub out dependencies. For that reason it's useful to combine unit tests with slower (and perhaps less commonly run) integration and acceptance tests.
+By isolating a module and simply testing its internal functionality, we can write tests that are *fast* and *accurate*---they can quickly tell you where a problem in your application lies. Note however that incomplete unit tests can often hide bugs because of the way they stub out dependencies. For that reason it's useful to combine unit tests with slower (and perhaps less commonly run) integration and acceptance tests.
 
 <h3 id="simple-unit-test">A simple unit test</h3>
 
 In the Todos example application, thanks to the fact that we've split our User Interface into [smart and reusable components](ui-ux.html#components), it's natural to want to unit test some of our reusable components (we'll see below how to [integration test](#simple-integration-test) our smart components).
 
-To do so, we'll use a very simple test helper that renders a Blaze component off-screen with a given data context (note that the [React test utils](https://facebook.github.io/react/docs/test-utils.html) can do a similar thing for React). As we place it in `imports/ui/test-helpers.js` it won't load in our app by in normal mode (as it's not required anywhere):
+To do so, we'll use a very simple test helper that renders a Blaze component off-screen with a given data context (note that the [React test utils](https://facebook.github.io/react/docs/test-utils.html) can do a similar thing for React). As we place it in `imports`, it won't load in our app by in normal mode (as it's not required anywhere).
+
+[`imports/ui/test-helpers.js`](https://github.com/meteor/todos/blob/master/imports/ui/test-helpers.js):
 
 ```js
 import { _ } from 'meteor/underscore';
@@ -213,10 +219,13 @@ export const function withRenderedTemplate(template, data, callback) {
 };
 ```
 
-A simple example of a reusable component to test is the `Todos_item` template. Here's what a unit test looks like (you can see some [others in the app repository](https://github.com/meteor/todos/blob/master/imports/ui/components/client/todos-item.tests.js)):
+A simple example of a reusable component to test is the [`Todos_item`](https://github.com/meteor/todos/blob/master/imports/ui/components/todos-item.html) template. Here's what a unit test looks like (you can see some [others in the app repository](https://github.com/meteor/todos/blob/master/imports/ui/components/client)).
+
+[`imports/ui/components/client/todos-item.tests.js`](https://github.com/meteor/todos/blob/master/imports/ui/components/client/todos-item.tests.js):
 
 ```js
 /* eslint-env mocha */
+/* eslint-disable func-names, prefer-arrow-callback */
 
 import { Factory } from 'meteor/factory';
 import { chai } from 'meteor/practicalmeteor:chai';
@@ -227,16 +236,16 @@ import { $ } from 'meteor/jquery';
 import { withRenderedTemplate } from '../../test-helpers.js';
 import '../todos-item.js';
 
-describe('Todos_item', () => {
-  beforeEach(() => {
+describe('Todos_item', function () {
+  beforeEach(function () {
     Template.registerHelper('_', key => key);
   });
 
-  afterEach(() => {
+  afterEach(function () {
     Template.deregisterHelper('_');
   });
 
-  it('renders correctly with simple data', () => {
+  it('renders correctly with simple data', function () {
     const todo = Factory.build('todo', { checked: false });
     const data = {
       todo,
@@ -264,7 +273,7 @@ To be a unit test, we must stub out the dependencies of the module. In this case
 
 <h4 id="unit-test-data">Creating data</h4>
 
-We can use the [Factory package's](#generating-data) `.build()` API to create a test document without inserting it into any collection. As we've been careful not to call out to any collections directly in the reusable component, we can pass the built `todo` document directly into the template.
+We can use the [Factory package's](#test-data) `.build()` API to create a test document without inserting it into any collection. As we've been careful not to call out to any collections directly in the reusable component, we can pass the built `todo` document directly into the template.
 
 <h3 id="running-unit-tests">Running unit tests</h3>
 
@@ -300,13 +309,13 @@ In the [unit test above](#simple-unit-test) we saw a very limited example of how
 
   - Alternatively, you can also use tools like [Sinon](http://sinonjs.org) to stub things directly, as we'll see for example in our [simple integration test](#simple-integration-test).
 
-  - The `stub-collections` package from the Todos example app we mentioned [above](#mocking-the-database).
+  - The [`hwillson:stub-collections`](https://atmospherejs.com/hwillson/stub-collections) package we mentioned [above](#mocking-the-database).
 
   - (Using another package from the example app) to isolate a publication, the `publication-collector` package:
 
     ```js
-    describe('lists.public', () => {
-      it('sends all public lists', (done) => {
+    describe('lists.public', function () {
+      it('sends all public lists', function (done) {
         // Allows us to look at the output of a publication without
         // needing a client connection
         const collector = new PublicationCollector();
@@ -324,7 +333,7 @@ There's a lot of scope for better isolation and testing utilities (the two packa
 
 An integration test is a test that crosses module boundaries. In the simplest case, this simply means something very similar to a unit test, where you perform your isolation around multiple modules, creating a non-singular "system under test".
 
-Although conceptually different to unit tests, such tests typically do not need to be run any differently to unit tests and can use the same [`meteor test` mode](#running-unit-tests) and [isolation techniques](#meteor-specific-isolation) as we use for unit tests.
+Although conceptually different to unit tests, such tests typically do not need to be run any differently to unit tests and can use the same [`meteor test` mode](#running-unit-tests) and [isolation techniques](#isolation-techniques) as we use for unit tests.
 
 However, an integration test that crosses the client-server boundary of a Meteor application (where the modules under test cross that boundary) requires a different testing infrastructure, namely Meteor's "full app" testing mode.
 
@@ -336,14 +345,17 @@ Our reusable components were a natural fit for a unit test; similarly our smart 
 
 In the Todos example app, we have an integration test for the `Lists_show_page` smart component. This test simply ensures that when the correct data is present in the database, the template renders correctly -- that it is gathering the correct data as we expect. It isolates the rendering tree from the more complex data subscription part of the Meteor stack. If we wanted to test that the subscription side of things was working in concert with the smart component, we'd need to write a [full app integration test](#full-app-integration-test).
 
+[`imports/ui/components/client/todos-item.tests.js`](https://github.com/meteor/todos/blob/master/imports/ui/components/client/todos-item.tests.js):
+
 ```js
 /* eslint-env mocha */
+/* eslint-disable func-names, prefer-arrow-callback */
 
 import { Meteor } from 'meteor/meteor';
 import { Factory } from 'meteor/factory';
 import { Random } from 'meteor/random';
 import { chai } from 'meteor/practicalmeteor:chai';
-import { StubCollections } from 'meteor/stub-collections';
+import StubCollections from 'meteor/hwillson:stub-collections';
 import { Template } from 'meteor/templating';
 import { _ } from 'meteor/underscore';
 import { $ } from 'meteor/jquery';
@@ -357,10 +369,10 @@ import '../lists-show-page.js';
 import { Todos } from '../../../api/todos/todos.js';
 import { Lists } from '../../../api/lists/lists.js';
 
-describe('Lists_show_page', () => {
+describe('Lists_show_page', function () {
   const listId = Random.id();
 
-  beforeEach(() => {
+  beforeEach(function () {
     StubCollections.stub([Todos, Lists]);
     Template.registerHelper('_', key => key);
     sinon.stub(FlowRouter, 'getParam', () => listId);
@@ -370,14 +382,14 @@ describe('Lists_show_page', () => {
     }));
   });
 
-  afterEach(() => {
+  afterEach(function () {
     StubCollections.restore();
     Template.deregisterHelper('_');
     FlowRouter.getParam.restore();
     Meteor.subscribe.restore();
   });
 
-  it('renders correctly with simple data', () => {
+  it('renders correctly with simple data', function () {
     Factory.create('list', { _id: listId });
     const timestamp = new Date();
     const todos = _.times(3, i => Factory.create('todo', {
@@ -404,20 +416,23 @@ As we'll run this test in the same way that we did our unit test, we need to `im
 
 <h4 id="simple-integration-test-stubbing">Stubbing</h4>
 
-As the system under test in our integration test has a larger surface area, we need to stub out a few more points of integration with the rest of the stack. Of particular interest here is our use of the [`stub-collections`](#mocking-the-database) and of [Sinon](https://sinonjs.org) to stub out Flow Router and our Subscription.
+As the system under test in our integration test has a larger surface area, we need to stub out a few more points of integration with the rest of the stack. Of particular interest here is our use of the [`hwillson:stub-collections`](#mocking-the-database) package and of [Sinon](https://sinonjs.org) to stub out Flow Router and our Subscription.
 
 <h4 id="simple-integration-test-data">Creating data</h4>
 
-In this test, we used [Factory package's](#generating-data) `.create()` API, which inserts data into the real collection. However, as we've proxied all of the `Todos` and `Lists` collection methods onto a local collection (this is what `stub-collections` is doing), we won't run into any problems with trying to perform inserts from the client.
+In this test, we used [Factory package's](#test-data) `.create()` API, which inserts data into the real collection. However, as we've proxied all of the `Todos` and `Lists` collection methods onto a local collection (this is what `hwillson:stub-collections` is doing), we won't run into any problems with trying to perform inserts from the client.
 
 This integration test can be run the exact same way as we ran [unit tests above](#running-unit-tests).
 
 <h3 id="full-app-integration-test">Full-app integration test</h3>
 
-In the Todos example application, we have a integration test which ensures that we see the full contents of a list when we route to it, which demonstrates a few techniques of integration tests:
+In the Todos example application, we have a integration test which ensures that we see the full contents of a list when we route to it, which demonstrates a few techniques of integration tests.
+
+[`imports/startup/client/routes.app-test.js`](https://github.com/meteor/todos/blob/master/imports/startup/client/routes.app-test.js):
 
 ```js
 /* eslint-env mocha */
+/* eslint-disable func-names, prefer-arrow-callback */
 
 import { Meteor } from 'meteor/meteor';
 import { Tracker } from 'meteor/tracker';
@@ -448,34 +463,27 @@ const afterFlushPromise = Promise.denodeify(Tracker.afterFlush);
 
 if (Meteor.isClient) {
   describe('data available when routed', () => {
-    beforeEach(done => {
-      // First, ensure the data that we expect is loaded on the server
-      generateData()
-        // Then, route the app to the homepage
-        .then(() => FlowRouter.go('/'))
-        // Nodeify is a API to return any error from the promise
-        // to the node-style done callback in the style it expects
-        .nodeify(done);
-    });
+    // First, ensure the data that we expect is loaded on the server
+    //   Then, route the app to the homepage
+    beforeEach(() => generateData().then(() => FlowRouter.go('/')));
 
     describe('when logged out', () => {
       it('has all public lists at homepage', () => {
         assert.equal(Lists.find().count(), 3);
       });
 
-      it('renders the correct list when routed to', done => {
+      it('renders the correct list when routed to', () => {
         const list = Lists.findOne();
         FlowRouter.go('Lists.show', { _id: list._id });
 
-        afterFlushPromise()
+        return afterFlushPromise()
           .then(() => {
             assert.equal($('.title-wrapper').html(), list.name);
           })
           .then(() => waitForSubscriptions())
           .then(() => {
             assert.equal(Todos.find({ listId: list._id }).count(), 3);
-          })
-          .nodeify(done);
+          });
       });
     });
   });
@@ -486,7 +494,7 @@ Of note here:
 
  - Before running, each test sets up the data it needs using the `generateData` helper (see [the section on creating integration test data](#creating-integration-test-data) for more detail) then goes to the homepage.
 
- - Although Flow Router doesn't take a done callback, we can use `Tracker.afterFlush` to wait for all it's reactive consequences to occur.
+ - Although Flow Router doesn't take a done callback, we can use `Tracker.afterFlush` to wait for all its reactive consequences to occur.
 
  - Here we wrote a little utility (which could be abstracted into a general package) to wait for all the subscriptions which are created by the route change (the `todos.inList` subscription in this case) to become ready before checking their data.
 
@@ -504,7 +512,7 @@ When we connect to the test instance in a browser, we want to render a testing U
 
 To create test data in full-app test mode, it usually makes sense to create some special test methods which we can call from the client side. Usually when testing a full app, we want to make sure the publications are sending through the correct data (as we do in this test), and so it's not sufficient to stub out the collections and place synthetic data in them. Instead we'll want to actually create data on the server and let it be published.
 
-Similar to the way we cleared the database using a method in the `beforeEach` in the [test data](#test-data) section above, we can call a method to do that before running our tests. In the case of our routing tests, we've used a file called `imports/api/generate-data.app-tests.js` which defines this method (and will only be loaded in full app test mode, so is not available in general!):
+Similar to the way we cleared the database using a method in the `beforeEach` in the [test data](#test-data) section above, we can call a method to do that before running our tests. In the case of our routing tests, we've used a file called [`imports/api/generate-data.app-tests.js`](https://github.com/meteor/todos/blob/master/imports/api/generate-data.app-tests.js) which defines this method (and will only be loaded in full app test mode, so is not available in general!):
 
 ```js
 // This file will be auto-imported in the app-test context,
@@ -561,10 +569,16 @@ Acceptance testing is the process of taking an unmodified version of our applica
 
 As acceptance tests test the behavior of the application in a full browser context in a generic way, there are a range of tools that you can to specify and run such tests. In this guide we'll demonstrate using [Chimp](https://chimp.readme.io), an acceptance testing tool with a few neat Meteor-specific features that makes it easy to use.
 
-We can install the Chimp tool globally using:
+Chimp requires node version 4 or 5. You can check your node version by running:
 
-```bash
-meteor npm install --global chimp
+```sh
+node -v
+```
+
+You can install version 4 from [nodejs.org](https://nodejs.org/en/download/) or version 5 with `brew install node`. Then we can install the Chimp tool globally using:
+
+```sh
+npm install --global chimp
 ```
 
 > Note that you can also install Chimp as a `devDependency` in your `package.json` but you may run into problems deploying your application as it includes binary dependencies. You can avoid such problems by running `meteor npm prune` to remove non-production dependencies before deploying.
@@ -580,10 +594,13 @@ Chimp has a variety of options for setting it up, but we can add some npm script
 }
 ```
 
-Chimp will now look in the `tests/` directory (otherwise ignored by the Meteor tool) for files in which you define acceptance tests. In the Todos example app, we define a simple test that ensures we can click the "create list" button:
+Chimp will now look in the `tests/` directory (otherwise ignored by the Meteor tool) for files in which you define acceptance tests. In the Todos example app, we define a simple test that ensures we can click the "create list" button.
+
+[`tests/lists.js`](https://github.com/meteor/todos/blob/master/tests/lists.js):
 
 ```js
 /* eslint-env mocha */
+/* eslint-disable func-names, prefer-arrow-callback */
 
 // These are Chimp globals
 /* globals browser assert server */
@@ -594,13 +611,13 @@ function countLists() {
   return elements.value.length;
 };
 
-describe('list ui', () => {
-  beforeEach(() => {
+describe('list ui', function () {
+  beforeEach(function () {
     browser.url('http://localhost:3000');
     server.call('generateFixtures');
   });
 
-  it('can create a list @watch', () => {
+  it('can create a list @watch', function () {
     const initialCount = countLists();
 
     browser.click('.js-new-list');

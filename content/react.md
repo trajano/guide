@@ -1,6 +1,6 @@
 ---
 title: React
-order: 10
+order: 23
 description: How to use React, Facebook's frontend rendering library, with Meteor.
 discourseTopicId: 20192
 ---
@@ -14,13 +14,13 @@ After reading this guide, you'll know:
 
 <h2 id="introduction">Introduction</h2>
 
-[React](https://facebook.github.io/react/) is a JavaScript library for building reactive user interfaces developed and distributed by the Facebook team. React is one of the three rendering libraries supported by Meteor; it is an alterative to [Blaze](blaze.html) and [Angular](angular.html).
+[React](https://facebook.github.io/react/) is a JavaScript library for building reactive user interfaces developed and distributed by the Facebook team. React is one of the three rendering libraries supported by Meteor; the alteratives are [Blaze](blaze.html) and [Angular](angular.html). [Here's a comparison](ui-ux.html#view-layers) of all three.
 
 React has a vibrant and growing ecosystem and is used widely in production in a variety of combinations with different frameworks.
 
 To learn more about using React in general and coming up to speed with the library, you should check out the [React documentation](https://facebook.github.io/react/docs/getting-started.html), especially the [thinking in React](https://facebook.github.io/react/docs/thinking-in-react.html) post, which explains the React philosophy well.
 
-To get started with React in Meteor, you can follow along the [React tutorial](https://www.meteor.com/tutorials/react/creating-an-app). To see an example of a more complete Meteor application built with React, check out the [`react` branch](https://github.com/meteor/todos/tree/react) of the Todos exmaple application. Where applicable, code examples in this article will reference that app.
+To get started with React in Meteor, you can follow along the [React tutorial](https://www.meteor.com/tutorials/react/creating-an-app). To see an example of a more complete Meteor application built with React, check out the [`react` branch](https://github.com/meteor/todos/tree/react) of the Todos example application. Where applicable, code examples in this article will reference that app.
 
 <h3 id="using-with-meteor">Installing and using React</h3>
 
@@ -32,7 +32,7 @@ npm install --save react react-dom
 
 This will install `react` into your project and allow you to access it within your files with `import React from 'react'`. Most React code is written in [JSX](https://facebook.github.io/react/docs/jsx-in-depth.html), which you can use by [default in Meteor](http://guide.meteor.com/build-tool.html#react-jsx) if you include the `ecmascript` package (which is installed in all Meteor apps by default).
 
-```js
+```jsx
 import React from 'react';
 
 export default class HelloWorld extends React.Component {
@@ -46,17 +46,17 @@ export default class HelloWorld extends React.Component {
 
 You can render a component heirarchy to the DOM using the `react-dom` package:
 
-```js
+```jsx
 import { Meteor } from 'meteor/meteor';
 import { render } from 'react-dom';
-import HelloWorld from './HelloWorld.jsx';
+import HelloWorld from './HelloWorld.js';
 
 Meteor.startup(() => {
   render(<HelloWorld/>, document.getElementById('app'));
 });
 ```
 
-You need to include a `<div id="app"/>` in your body's HTML somewhere of course.
+You need to include a `<div id="app"></div>` in your body's HTML somewhere of course.
 
 Every new Meteor app includes Blaze, Meteor's default templating system, by default. If you are not planning on [using React and Blaze together](#using-with-blaze), you can remove Blaze from your project by running:
 
@@ -67,9 +67,9 @@ meteor add static-html
 
 <h3 id="using-third-party-npm-packages">Using 3rd party packages</h3>
 
-If you'd like to use a third party React component that has been published on npm (such as the ones you find on the [React Components site](http://react-components.com)), you can simple `npm install --save` them and `import` from within your app.
+If you'd like to use a third party React component that has been published on npm (such as the ones you find on the [React Components site](http://react-components.com)), you can `npm install --save` them and `import` from within your app.
 
-For example, to use the excellent [Griddle](http://griddlegriddle.github.io/Griddle/) React package, you could run
+For example, to use the excellent [Griddle](http://griddlegriddle.github.io/Griddle/) React package for making tables, you could run
 
 ```sh
 npm install --save griddle-react
@@ -77,7 +77,7 @@ npm install --save griddle-react
 
 Then, like with any other [npm package](using-packages.html#npm), you can import the component in your application:
 
-```js
+```jsx
 import React from 'react';
 import Griddle from 'griddle-react';
 
@@ -90,7 +90,8 @@ export default class MyGriddler extends React.Component {
 
 If you are looking to write an Atmosphere package that wraps such a component, you need to take some [further steps](#atmosphere-packages).
 
-<h3 id="using-with-blaze">Using Blaze with React</h3>
+<span id="using-with-blaze"><!-- don't break old links --></span>
+<h3 id="react-in-blaze">React Components in Blaze</h3>
 
 If you'd like to use React within a larger app built with [Blaze](#blaze.html) (which is a good strategy if you'd like to incrementally migrate an app from Blaze to React), you can use the [`react-template-helper`](https://atmospherejs.com/meteor/react-template-helper) component which renders a react component inside a Blaze template. First run `meteor add react-template-helper`, then use the `React` helper in your template:
 
@@ -107,7 +108,7 @@ You will need to pass in the component class with a helper:
 import { Template } from 'meteor/templating';
 
 import './userDisplay.html';
-import UserAvatar from './UserAvatar.jsx';
+import UserAvatar from './UserAvatar.js';
 
 Template.userDisplay.helpers({
   UserAvatar() {
@@ -154,6 +155,25 @@ To use it in Blaze:
 </template>
 ```
 
+<h3 id="blaze-in-react">Blaze Templates in React</h3>
+
+Just like we can use React components in Blaze templates, we can also use Blaze templates in React components.  This is simularly useful for a gradual transition strategy; but more importantly, it allows us to continue to use the multitude of Atmosphere packages built for Blaze in our React projects, as well as core packages like `accounts-ui`.
+
+One easy way to do this is with the [`gadicc:blaze-react-component`](https://atmospherejs.com/gadicc/blaze-react-component) package.  First run `meteor add gadicc:blaze-react-component`, then import and use it in your components as follows:
+
+```jsx
+import React from 'react';
+import Blaze from 'meteor/gadicc:blaze-react-component';
+
+const App = () => (
+  <div>
+    <Blaze template="itemsList" items={items} />
+  </div>
+);
+```
+
+The `<Blaze template="itemsList" items={items} />` line is the same as if you had written `{% raw %}{{> itemsList items=items}}{% endraw %}` inside of a Blaze template.  For other options and further information, see the package's [project page](https://github.com/gadicc/meteor-blaze-react-component).
+
 <h2 id="data">Using Meteor's data system</h2>
 
 React is a front-end rendering library and as such doesn't concern itself with how data gets into and out of components. On the other hand, Meteor has strong opinions about data! Meteor operates in terms of [publications](data-loading.html) and [methods](methods.html), used to subscribe to and modify the data in your application.
@@ -166,20 +186,20 @@ Once you've run `meteor add react-meteor-data`, you'll be able to import the `cr
 
 > Note that "container components" are analogous to the "smart components" and "presentational components" to the "reusable components" in the pattern we document in the [UI/UX article](http://guide.meteor.com/ui-ux.html#components), if you'd like to read more about how this philosophy relates to Meteor.
 
-For example, in the Todos example app, we have a `ListsShow` component, which renders list metadata and the tasks in the list. In order to do so, it needs to [subscribe](data-loading.html#subscriptions) to the `todos.inList` publication, check that subscription's readiness, then fetch the list of todos from the `Todos` collection.
+For example, in the Todos example app, we have a `ListPage` component, which renders list metadata and the tasks in the list. In order to do so, it needs to [subscribe](data-loading.html#subscriptions) to the `todos.inList` publication, check that subscription's readiness, then fetch the list of todos from the `Todos` collection.
 
 It also needs to be responsive to reactive changes in the state of those actions (for instance if a todo changes due to the action of another user). All this data loading complexity is a typical use-case for a container-presentational component split, and the `createContainer()` function makes it simple to do this.
 
-We simply define the `ListsShow` component as a presentational component that expects its data to be passed in using React `props`:
+We simply define the `ListPage` component as a presentational component that expects its data to be passed in using React `props`:
 
-```js
+```jsx
 import React from 'react';
 
-export default class ListsShow extends React.Component {
+export default class ListPage extends React.Component {
   ...
 }
 
-ListsShow.propTypes = {
+ListPage.propTypes = {
   list: React.PropTypes.object,
   todos: React.PropTypes.array,
   loading: React.PropTypes.bool,
@@ -187,15 +207,15 @@ ListsShow.propTypes = {
 };
 ```
 
-Then we create a `ListsShowPage` container component which wraps it and provides a data source:
+Then we create a `ListContainer` container component which wraps it and provides a data source:
 
 ```js
 import { Meteor } from 'meteor/meteor';
 import { Lists } from '../../api/lists/lists.js';
 import { createContainer } from 'meteor/react-meteor-data';
-import ListsShow from '../pages/ListsShow.jsx';
+import ListPage from '../pages/ListPage.js';
 
-export default createContainer(({ params }) => {
+export default ListContainer = createContainer(({ params }) => {
   const { id } = params;
   const todosHandle = Meteor.subscribe('todos.inList', id);
   const loading = !todosHandle.ready();
@@ -207,15 +227,15 @@ export default createContainer(({ params }) => {
     listExists,
     todos: listExists ? list.todos().fetch() : [],
   };
-}, ListsShow);
+}, ListPage);
 ```
 
 The container component created by `createContainer()` will reactively rerender the wrapped component in response to any changes to [reactive data sources](https://atmospherejs.com/meteor/tracker) accessed from inside the function provided to it.
 
-Although this `ListsShowPage` container is intended to be instantiated by the React Router (which passes in the props automatically), if we did ever want to create one manually, we would need to pass in the props to the container component (which then get passed into our data function above):
+Although this `ListContainer` container is intended to be instantiated by the React Router (which passes in the props automatically), if we did ever want to create one manually, we would need to pass in the props to the container component (which then get passed into our data function above):
 
-```js
-<ListsShowPage params={{id: '7'}}/>
+```jsx
+<ListContainer params={{id: '7'}}/>
 ```
 
 <h3 id="preventing-rerenders">Preventing re-renders</h3>
@@ -235,24 +255,44 @@ There are two main options for routing with Meteor and React. Either way, we rec
 Using Flow Router with React is very similar to using it with Blaze. The only difference is that in your route actions, you should use the [`react-mounter`](https://www.npmjs.com/package/react-mounter) package to mount components with a layout. Once you `npm install --save react-mounter`, you can do the following:
 
 ```js
+import React from 'react';
 import { FlowRouter } from 'meteor/kadira:flow-router';
 import { mount } from 'react-mounter';
 
-import AppContainer from '../../ui/containers/AppContainer.jsx';
-import ListContainer from '../../ui/containers/ListContainer.jsx';
+import AppContainer from '../../ui/containers/AppContainer.js';
+import ListContainer from '../../ui/containers/ListContainer.js';
 
 
 FlowRouter.route('/lists/:_id', {
   name: 'Lists.show',
   action() {
     mount(AppContainer, {
-      main: () => <ListContainer/>,
+      main: <ListContainer/>,
     });
   },
 });
 ```
 
 Note that `react-mounter` automatically mounts the layout component on a `#react-root` node, which you can change by using the `withOptions()` function.
+
+In the below example, your `App` component would receive a `main` prop with a instantiated React Element to render:
+
+```js
+const App = (props) => (
+  <div>
+    <section id="menu"><..></section>
+    {props.main}
+  </div>
+);
+
+export default AppContainer = createContainer(props => {
+  // props here will have `main`, passed from the router
+  // anything we return from this function will be *added* to it
+  return {
+    user: Meteor.user(),
+  };
+}, App);
+```
 
 <h3 id="using-react-router">React Router</h3>
 
@@ -263,11 +303,11 @@ import React from 'react';
 import { Router, Route, browserHistory } from 'react-router';
 
 // route components
-import AppContainer from '../../ui/containers/AppContainer.jsx';
-import ListContainer from '../../ui/containers/ListContainer.jsx';
-import AuthPageSignIn from '../../ui/pages/AuthPageSignIn.jsx';
-import AuthPageJoin from '../../ui/pages/AuthPageJoin.jsx';
-import NotFoundPage from '../../ui/pages/NotFoundPage.jsx';
+import AppContainer from '../../ui/containers/AppContainer.js';
+import ListContainer from '../../ui/containers/ListContainer.js';
+import AuthPageSignIn from '../../ui/pages/AuthPageSignIn.js';
+import AuthPageJoin from '../../ui/pages/AuthPageJoin.js';
+import NotFoundPage from '../../ui/pages/NotFoundPage.js';
 
 export const renderRoutes = () => (
   <Router history={browserHistory}>
@@ -286,7 +326,7 @@ With React Router, you'll also need to explicity render the exported routes in a
 ```js
 import { Meteor } from 'meteor/meteor';
 import { render } from 'react-dom';
-import { renderRoutes } from '../imports/startup/client/routes.jsx';
+import { renderRoutes } from '../imports/startup/client/routes.js';
 
 Meteor.startup(() => {
   render(renderRoutes(), document.getElementById('app'));
@@ -308,5 +348,3 @@ If you are writing an Atmosphere package and want to depend on React or an npm p
 Instead, you need to ask your users to install the correct npm packages in the application itself. This will ensure that only one copy of React is shipped to the client and there are no version conflicts.
 
 In order to check that a user has installed the correct versions of npm packages, you can use the [`tmeasday:check-npm-versions`](https://atmospherejs.com/tmeasday/check-npm-versions) package to check dependency versions at runtime.
-
-XXX: not putting in code samples here as they may change and I don't want to have to remember to do it in two places.
